@@ -1,0 +1,20 @@
+{
+    "root" : "/mnt/data01/antonio/Dropbox/BSL/CRSMEX/data/",
+    "out_dir" : "/mnt/data01/antonio/Dropbox/BSL/CRSMEX/output/20211027/",
+    "share_dir" : "/mnt/data01/antonio/Dropbox/BSL/output_crsmex/20211027/",
+    "send_email" : true,
+    "share_results" : true,
+    "_comment_01" : "Control parameters",
+    "Win" : 256,
+    "Threshold" : 0.9,
+    "low_f" : 1.0,
+    "high_f" : 8.0,
+    "n_poles" : 4,
+    "_options" : ["combined", "manual use a", "automatic use t5"],
+    "p_pick" : "combined",
+    "pplot" : false,
+    "no_limit" : false,
+    "eq_distance_threshold" : 25,
+    "eq_sta_dist_limit" : 300
+
+}
