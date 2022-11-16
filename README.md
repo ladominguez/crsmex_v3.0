@@ -1,4 +1,4 @@
-# crsmex_v3.0
+# crsmex V3.0
 Code to search for repeating earthquakes using Numba. 
 
 example:
