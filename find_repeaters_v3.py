@@ -5,7 +5,9 @@ from datetime import date
 from obspy.geodetics.base import gps2dist_azimuth
 import json
 import utils
+import time
 import argparse
+from tqdm import tqdm
 
 config = utils.load_configuration()
 
@@ -21,5 +23,18 @@ if __name__ == '__main__':
     station = args.station
 
     print("Loading data in memory for station:  " + station)
+    start = time.time()
     master = read(os.path.join(root, station.upper(), 'sac', '*HZ*.sac'))
-    print("Number of waveforms = "+ str(len(master)))
+    N = len(master)
+    end = time.time()
+    print("Number of waveforms = "+ str(N), ' time elapsed: ', end-start, 's.')
+    master.filter('bandpass', 
+            freqmin=config['low_f'] , 
+            freqmax=config['high_f'], 
+            corners=config['n_poles'], 
+            zerophase=True )
+
+    for tr in tqdm(master):
+        kevnm_master = tr.stats.sac.kevnm.rstrip()
+
+
