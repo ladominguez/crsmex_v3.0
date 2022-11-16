@@ -34,7 +34,9 @@ if __name__ == '__main__':
             corners=config['n_poles'], 
             zerophase=True )
 
-    for tr in tqdm(master):
+    for k, tr in enumerate(tqdm(master)):
         kevnm_master = tr.stats.sac.kevnm.rstrip()
+        for n in range(k+1,N):
+                pass
 
 
