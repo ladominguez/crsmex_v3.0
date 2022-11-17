@@ -5,7 +5,7 @@
     "send_email" : true,
     "share_results" : true,
     "_comment_01" : "Control parameters",
-    "Win" : 256,
+    "Win" : 512,
     "Threshold" : 0.9,
     "low_f" : 1.0,
     "high_f" : 8.0,
