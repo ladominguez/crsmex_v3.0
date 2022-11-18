@@ -36,3 +36,43 @@ def FFTshift(signal, delay):
     y = fftpack.ifft(Y)
     y = y.real
     return y
+
+def coherency(*args):
+# Input arguments:
+#  S1 - Signal 1 numpy array
+#  S2 - Signal 2 numpy array
+#  f1 - Minimum frquency
+#  f2 - Maximum frequency
+#  fs - Sampling frequency
+    nargin = len(args)
+
+    if nargin == 0:
+        sac1 = read('./test_data/20080925043418.IG.PLIG.BHZ.sac')
+        sac2 = read('./test_data/20011105104504.IG.PLIG.BHZ.sac')
+        S1   = sac1[0].data
+        S2   = sac2[0].data
+        fs   = sac2[0].stats.sampling_rate
+        fmin = 1.0
+        fmax = 8.0
+        filename = 'test.dat'
+    elif nargin == 5:
+        S1       = args[0]
+        S2       = args[1]
+        fmin     = args[2]
+        fmax     = args[3]
+        fs       = args[4]
+    else:
+        sys.exit('Invalid number of input arguments - crsmex.coherency')
+
+    N1  = len(S1)
+    N2  = len(S2)
+    #Cxy, f = matplotlib.mlab.cohere(S1,S2,Fs=fs,NFFT=128)
+    f, Cxy = signal.coherence(S1, S2, fs=fs)
+    f_ind  = np.where((f >= fmin) & (f <= fmax))
+    Cxy_mean = np.mean(np.sqrt(Cxy[f_ind]))
+    out = np.array([f, Cxy])
+
+    #if Cxy_mean >= 0.8:
+    #     print 'Writting coherency ', filename
+    #     np.savetxt(filename,np.transpose(out),fmt='%-8.3f %7.5f')
+    return Cxy_mean

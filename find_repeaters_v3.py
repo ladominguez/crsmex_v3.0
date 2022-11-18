@@ -10,12 +10,15 @@ import argparse
 from tqdm import tqdm
 import numpy as np
 from matplotlib import pyplot as plt
+import crsmex as crs
 
 config = utils.load_configuration()
 today         = date.today()
 start_time    = time.time()
 
 root = config['root']
+
+plotting = False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -51,23 +54,29 @@ if __name__ == '__main__':
                 reftime=waveforms[k].stats.starttime - waveforms[k].stats.sac.b), 
                 t5_master, side="left")
         master = waveforms[k].data[id_master:id_master+config['Win']]
-        print('t5: ', t5_master)
-        print('id: ', id_master)
-        print('N: ', len(master))
         for n in range(k+1,N):
             t5_test = waveforms[n].stats.sac.t5 - 1.5
-            dt_test = waveforms[k].stats.sampling_rate
+            ds_test = waveforms[k].stats.sampling_rate
             id_test = np.searchsorted(waveforms[n].times(
                                       reftime=waveforms[n].stats.starttime - waveforms[n].stats.sac.b), 
                                       t5_test, side="left")
             test = waveforms[n].data[id_test:id_test+config['Win']]
-
-            fig, ax = plt.subplots(2,1)
-            t = np.linspace(0, (config['Win']-1)/ds_master, config['Win'])
-            ax[0].plot(t,master)
-            ax[1].plot(t,test)
-            fig.savefig('plot_' + str(k) + '_' + str(n) + '.png')
-            plt.close()
+            CorrelationCoefficient, tshift = crs.get_correlation_coefficient(master, test, 1/ds_master)
+            
+            if CorrelationCoefficient >= config['Threshold']:
+                coherence = crs.coherency(master, test, config['low_f'], config['high_f'], ds_master)
+            
+            print('cc: ', CorrelationCoefficient, ' coh: ', coherence)
+            
+            if plotting:
+                fig, ax = plt.subplots(3,1, figsize=(22, 12))
+                t = np.linspace(0, (config['Win']-1)/ds_master, config['Win'])
+                ax[0].plot(t,master, color='black', linewidth=0.5)
+                ax[1].plot(t,test, color='black', linewidth=0.5)
+                ax[2].plot(t, crs.FFTshift(master/np.max(np.abs(master)),float(tshift*ds_master)), linewidth = 0.4)
+                ax[2].plot(t, crs.FFTshift(master/np.max(np.abs(master)),float(tshift*ds_master)), linewidth = 0.4)
+                fig.savefig('plot_' + str(k) + '_' + str(n) + '.png')
+                plt.close()
 
 
 
