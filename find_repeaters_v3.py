@@ -6,6 +6,7 @@ from obspy.geodetics.base import gps2dist_azimuth
 import json
 import utils
 import time
+import datetime
 import argparse
 from tqdm import tqdm
 import numpy as np
@@ -54,6 +55,7 @@ if __name__ == '__main__':
                 reftime=waveforms[k].stats.starttime - waveforms[k].stats.sac.b), 
                 t5_master, side="left")
         master = waveforms[k].data[id_master:id_master+config['Win']]
+        datetime_master = datetime.datetime.strftime(waveforms[k].stats.starttime.datetime,'%Y.%j.%H%M%S')
         for n in range(k+1,N):
             t5_test = waveforms[n].stats.sac.t5 - 1.5
             ds_test = waveforms[k].stats.sampling_rate
@@ -65,8 +67,9 @@ if __name__ == '__main__':
             
             if CorrelationCoefficient >= config['Threshold']:
                 coherence = crs.coherency(master, test, config['low_f'], config['high_f'], ds_master)
+                datetime_test = datetime.datetime.strftime(waveforms[n].stats.starttime.datetime,'%Y.%j.%H%M%S')
             
-            print('cc: ', CorrelationCoefficient, ' coh: ', coherence)
+            print('cc: ', round(CorrelationCoefficient*1e4), ' coh: ', round(coherence*1e4))
             
             if plotting:
                 fig, ax = plt.subplots(3,1, figsize=(22, 12))
