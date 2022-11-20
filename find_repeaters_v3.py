@@ -10,6 +10,7 @@ import datetime
 import argparse
 from tqdm import tqdm
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 import crsmex as crs
 
@@ -38,15 +39,16 @@ if __name__ == '__main__':
         start = time.time()
         waveforms = read(os.path.join(root, station.upper(), 'sac', '*HZ*.sac'))
         end = time.time()
-        print("Number of waveforms = "+ str(N), ' time elapsed: ', end-start, 's.')
 
     N = len(waveforms)
+    print("Number of waveforms = "+ str(N), ' time elapsed: ', end-start, 's.')
     waveforms.filter('bandpass', 
             freqmin=config['low_f'] , 
             freqmax=config['high_f'], 
             corners=config['n_poles'], 
             zerophase=True )
 
+    output_list = []
     for k in tqdm(range(0,N)):
         kevnm_master = waveforms[k].stats.sac.kevnm.rstrip()
         ds_master = waveforms[k].stats.sampling_rate
@@ -66,10 +68,15 @@ if __name__ == '__main__':
             CorrelationCoefficient, tshift = crs.get_correlation_coefficient(master, test, 1/ds_master)
             
             if CorrelationCoefficient >= config['Threshold']:
+                kevnm_test = waveforms[n].stats.sac.kevnm.rstrip()
                 coherence = crs.coherency(master, test, config['low_f'], config['high_f'], ds_master)
                 datetime_test = datetime.datetime.strftime(waveforms[n].stats.starttime.datetime,'%Y.%j.%H%M%S')
+                outline = {1 : datetime_master, 2 : datetime_test, 3 :
+                        int(round(CorrelationCoefficient*1e4)), 4 : int(round(coherence*1e4)), 
+                        5 : '%08d' % (int(kevnm_master)), 6: '%08d' % (int(kevnm_test))}
+                output_list.append(outline)
             
-            print('cc: ', round(CorrelationCoefficient*1e4), ' coh: ', round(coherence*1e4))
+            #print('cc: ', round(CorrelationCoefficient*1e4), ' coh: ', round(coherence*1e4))
             
             if plotting:
                 fig, ax = plt.subplots(3,1, figsize=(22, 12))
@@ -80,8 +87,9 @@ if __name__ == '__main__':
                 ax[2].plot(t, crs.FFTshift(master/np.max(np.abs(master)),float(tshift*ds_master)), linewidth = 0.4)
                 fig.savefig('plot_' + str(k) + '_' + str(n) + '.png')
                 plt.close()
-
-
+    df_final = pd.DataFrame.from_dict(output_list)
+    print(df_final.head())
+    df_final.to_csv(r'pandas.txt', header=None, index=None, sep=' ')
 
 
 
