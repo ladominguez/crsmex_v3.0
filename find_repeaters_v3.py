@@ -50,30 +50,31 @@ def processing(waveforms_numpy, N, kevnm, dsampling_rate, datetimes, Threshold,
     output_list = []
     print('N: ', N)
 
+    #N = 5
     for k in tqdm(range(0,N)):
         Power_S1 = max(np.correlate(waveforms_numpy[k,:],waveforms_numpy[k,:]))/Win
         dt = 1/dsampling_rate[k]
         for n in range(k+1,N):
-            CorrelationCoefficient, tshift = get_correlation_coefficient(waveforms_numpy[k,:], waveforms_numpy[n,:], 1/dsampling_rate[k])
-            #Power_S2 = max(np.correlate(waveforms_numpy[n,:],waveforms_numpy[n,:]))/Win
-            #if (Power_S1 == 0) or (Power_S2 == 0):
-            #    CorrelationCoefficient = 0
-            #    tshift                 = 0
-            #else:
-            #    A = np.correlate(waveforms_numpy[k,:],waveforms_numpy[n,:],'full')/(N*np.sqrt(Power_S1*Power_S2))
-            #    time2 = np.arange(-(Win-1)*dt, Win*dt, dt)
-            #    CorrelationCoefficient = A.max()
-            #    index = np.argmax(A)
-            #    tshift = time2[index]
-            
-            
-            if CorrelationCoefficient >= Threshold:
-                #coherence = crs.coherency(waveforms_numpy[k,:], waveforms_numpy[n,:], low_f, high_f, dsampling_rate[k])
-                coherence = 0.97
-                outline = (datetimes[k], datetimes[n], int(round(CorrelationCoefficient*1e4)))
-                print(outline)
-                #int(round(coherence*1e4)), '%08d' % (int(kevnm[k])), '%08d' % (int(kevnm[n])))
+            Power_S2 = max(np.correlate(waveforms_numpy[n,:],waveforms_numpy[n,:]))/Win
+            if (Power_S1 == 0) or (Power_S2 == 0):
+                CorrelationCoefficient = 0
+                tshift                 = 0
+            else:    
+                A = np.correlate(waveforms_numpy[k,:],waveforms_numpy[n,:],'full')/(Win*np.sqrt(Power_S1*Power_S2))
+                time2 = np.arange(-(Win-1)*dt, Win*dt, dt)
+                CorrelationCoefficient = A.max()
+                index = np.argmax(A)
+                tshift = time2[index]
                 
+            #CorrelationCoefficient, tshift = get_correlation_coefficient(waveforms_numpy[k,:], waveforms_numpy[n,:], 1/dsampling_rate[k])
+            #print(CorrelationCoefficient, ' - ', CorrelationCoefficient2)
+            if CorrelationCoefficient >= Threshold:
+                coherence = crs.coherency(waveforms_numpy[k,:], waveforms_numpy[n,:], low_f, high_f, dsampling_rate[k])
+                #coherence = 0.97
+                outline = (datetimes[k], datetimes[n], CorrelationCoefficient, 
+                           coherence, kevnm[k], kevnm[n])
+                #print(outline)
+                #int(round(coherence*1e4)), '%08d' % (int(kevnm[k])), '%08d' % (int(kevnm[n])))
                 output_list.append(outline)
             
             #print('cc: ', round(CorrelationCoefficient*1e4), ' coh: ', round(coherence*1e4))
@@ -149,8 +150,12 @@ if __name__ == '__main__':
     end = time.time() 
     print('Time elapsed: ', end - start, 's.')
 
-    print(output_list)
+    #print(output_list)
     df_final = pd.DataFrame.from_dict(output_list)
+    df_final[2] = df_final[2].apply(lambda x: x*1e4).astype('int')
+    df_final[3] = df_final[3].apply(lambda x: x*1e4).astype('int')
+    df_final[4] = df_final[4].astype('int').apply(lambda x: f"{x:08d}")
+    df_final[5] = df_final[5].astype('int').apply(lambda x: f"{x:08d}")
     print(df_final.head())
     df_final.to_csv(r'pandas.txt', header=None, index=None, sep=' ')
 
