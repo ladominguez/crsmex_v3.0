@@ -54,28 +54,29 @@ def processing(waveforms_numpy, N, kevnm, dsampling_rate, datetimes, Threshold,
     for k in tqdm(range(0,N)):
         Power_S1 = max(np.correlate(waveforms_numpy[k,:],waveforms_numpy[k,:]))/Win
         dt = 1/dsampling_rate[k]
-        for n in range(k+1,N):
-            Power_S2 = max(np.correlate(waveforms_numpy[n,:],waveforms_numpy[n,:]))/Win
-            if (Power_S1 == 0) or (Power_S2 == 0):
-                CorrelationCoefficient = 0
-                tshift                 = 0
-            else:    
-                A = np.correlate(waveforms_numpy[k,:],waveforms_numpy[n,:],'full')/(Win*np.sqrt(Power_S1*Power_S2))
-                time2 = np.arange(-(Win-1)*dt, Win*dt, dt)
-                CorrelationCoefficient = A.max()
-                index = np.argmax(A)
-                tshift = time2[index]
+        if Power_S1 != 0:
+            for n in range(k+1,N):
+                Power_S2 = max(np.correlate(waveforms_numpy[n,:],waveforms_numpy[n,:]))/Win
+                if Power_S2 == 0:
+                    CorrelationCoefficient = 0
+                    tshift                 = 0
+                else:    
+                    A = np.correlate(waveforms_numpy[k,:],waveforms_numpy[n,:],'full')/(Win*np.sqrt(Power_S1*Power_S2))
+                    time2 = np.arange(-(Win-1)*dt, Win*dt, dt)
+                    CorrelationCoefficient = A.max()
+                    index = np.argmax(A)
+                    tshift = time2[index]
                 
-            #CorrelationCoefficient, tshift = get_correlation_coefficient(waveforms_numpy[k,:], waveforms_numpy[n,:], 1/dsampling_rate[k])
-            #print(CorrelationCoefficient, ' - ', CorrelationCoefficient2)
-            if CorrelationCoefficient >= Threshold:
-                coherence = crs.coherency(waveforms_numpy[k,:], waveforms_numpy[n,:], low_f, high_f, dsampling_rate[k])
-                #coherence = 0.97
-                outline = (datetimes[k], datetimes[n], CorrelationCoefficient, 
-                           coherence, kevnm[k], kevnm[n])
-                #print(outline)
-                #int(round(coherence*1e4)), '%08d' % (int(kevnm[k])), '%08d' % (int(kevnm[n])))
-                output_list.append(outline)
+                #CorrelationCoefficient, tshift = get_correlation_coefficient(waveforms_numpy[k,:], waveforms_numpy[n,:], 1/dsampling_rate[k])
+                #print(CorrelationCoefficient, ' - ', CorrelationCoefficient2)
+                if CorrelationCoefficient >= Threshold:
+                    coherence = crs.coherency(waveforms_numpy[k,:], waveforms_numpy[n,:], low_f, high_f, dsampling_rate[k])
+                    #coherence = 0.97
+                    outline = (datetimes[k], datetimes[n], CorrelationCoefficient, 
+                               coherence, kevnm[k], kevnm[n])
+                    #print(outline)
+                    #int(round(coherence*1e4)), '%08d' % (int(kevnm[k])), '%08d' % (int(kevnm[n])))
+                    output_list.append(outline)
             
             #print('cc: ', round(CorrelationCoefficient*1e4), ' coh: ', round(coherence*1e4))
             
@@ -106,6 +107,8 @@ def convert_obspy_numpy(waveforms, N):
                 reftime=tr.stats.starttime - tr.stats.sac.b), 
                 t5, side="left")
         master = tr.data[id_master:id_master+config['Win']]
+        if len(master) != config['Win']:
+            continue # The record is incomplete, this will make CC=0
         waveforms_numpy[k,:] = master
 
         
