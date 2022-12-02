@@ -101,7 +101,10 @@ def convert_obspy_numpy(waveforms, N):
         datetimes.append(datetime.datetime.strftime(waveforms[k].stats.starttime.datetime,'%Y.%j.%H%M%S'))
         kevnm[k] = tr.stats.sac.kevnm.rstrip()
         dsampling_rate[k] = tr.stats.sampling_rate
-        t5 = tr.stats.sac.t5 - before_p_wave
+        if hasattr(tr.stats.sac,'t5'):
+            t5 = tr.stats.sac.t5 - before_p_wave
+        else:
+            t5 = tr.stats.sac.a - before_p_wave
 
         id_master = np.searchsorted(tr.times(
                 reftime=tr.stats.starttime - tr.stats.sac.b), 
